@@ -59,13 +59,26 @@ router.post("/book-show", async (req, res) => {
       bookedSeats: updatedBookedSeats,
     });
 
-    const populatedBooking = await Booking.findById(newBooking._id).populate({
-      path: "user",
-      select: "email name", // Specify the fields you want to include
+    const populatedBooking = await Booking.findById(newBooking._id).populate("user")
+    .populate("show")
+    .populate({
+      path: "show",
+      populate: {
+        path: "movie",
+        model: "movies",
+      },
+    })
+    .populate({
+      path: "show",
+      populate: {
+        path: "theatre",
+        model: "theatres",
+      },
     });
 
+
     console.log("this is populated Booking", populatedBooking);
-    console.log(populatedBooking.user.email);
+    // console.log(populatedBooking.user.email);
 
     res.send({
       success: true,
@@ -75,9 +88,15 @@ router.post("/book-show", async (req, res) => {
 
     await EmailHelper("ticketTemplate.html", populatedBooking.user.email, {
        name: populatedBooking.user.name,
+       movie : populatedBooking.show.movie.title,
+       theatre : populatedBooking.show.theatre.name,
+       date:populatedBooking.show.date,
+       time:populatedBooking.show.time,
        seats : populatedBooking.seats,
-       amount : populatedBooking.seats.length * 200,
-       transactionId : populatedBooking.transactionId
+       amount : populatedBooking.seats.length * populatedBooking.show.ticketPrice,
+       transactionId : populatedBooking.transactionId,
+       
+       
 
     });
   } catch (err) {
