@@ -7,6 +7,45 @@ const Booking = require("../models/bookingModel");
 const Show = require("../models/showModel");
 const EmailHelper = require("../utils/emailSender");
 
+const endpointSecret = "whsec_774b9109545b45e18af845534afa4e7e0d144a1a57db46482ca7886c10cd5a5a";
+
+ // Webhook endpoint 
+router.post('/webhook', express.raw({ type: 'application/json' }), (request, response) => {
+  console.log('Webhook Called')
+  const sig = request.headers['stripe-signature'];
+  let event;
+
+try {
+    event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+  } catch (err) {
+    response.status(400).send(`Webhook Error: ${err.message}`);
+    return;
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'payment_intent.succeeded':
+      const paymentIntent = event.data.object;
+      handlePaymentIntentSucceeded(paymentIntent);
+      break;
+    // ... handle other event types
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+
+
+
+
+  response.send();
+});
+
+// Function to handle payment_intent.succeeded event
+async function handlePaymentIntentSucceeded(paymentIntent) {
+  console.log('Succesfull')
+  console.log(paymentIntent)
+}
+
 router.post("/make-payment", async (req, res) => {
   try {
     const { token, amount } = req.body;
