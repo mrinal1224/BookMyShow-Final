@@ -43,6 +43,7 @@ function MovieList() {
       dataIndex: "poster",
       render: (text, data) => {
         return (
+          // eslint-disable-next-line jsx-a11y/alt-text
           <img
             width="75"
             height="115"
