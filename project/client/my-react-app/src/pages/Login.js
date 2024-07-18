@@ -1,81 +1,69 @@
-import React, { useEffect } from 'react'
-import { Button, Form, Input, message } from "antd";
-import { Link, useNavigate } from "react-router-dom";
-import { LoginUser } from '../calls/users';
+import React, { useState } from 'react';
 
-function Login() {
-  const navigate = useNavigate();
+const LoginForm = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if(localStorage.getItem('token')){
-        navigate("/");
-    }
-  }, [navigate]); 
+  const handleLogin = async (event) => {
+    event.preventDefault();
 
-  const onFinish = async (values) => {
     try {
-      const response = await LoginUser(values);
-      if (response.success) {
-        message.success(response.message);
-        localStorage.setItem('token', response.token);
-        navigate('/');
-      } else {
-        message.error(response.message);
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Login failed');
       }
-    } catch (error) {
-      message.error(error.message);
+
+      const data = await response.json();
+
+      if (data && data.success) {
+        setSuccess(true);
+        setError('');
+      } else {
+        setSuccess(false);
+        setError('Invalid credentials');
+      }
+    } catch (err) {
+      console.error('Error during login:', err);
+      setError('An error occurred. Please try again later.');
     }
   };
 
   return (
-    <>
-      <header className="App-header">
-        <main className="main-area mw-500 text-center px-3">
-          <section className="left-section">
-            <h1>Login to BookMyShow</h1>
-          </section>
-
-          <section className="right-section">
-            <Form layout="vertical" onFinish={onFinish}>
-              <Form.Item
-                label="Email"
-                htmlFor="email"
-                name="email"
-                className="d-block"
-                rules={[{ required: true, message: "Email is required" }]}
-              >
-                <Input id="email" type="text" placeholder="Enter your Email" />
-              </Form.Item>
-
-              <Form.Item
-                label="Password"
-                htmlFor="password"
-                name="password"
-                className="d-block"
-                rules={[{ required: true, message: "Password is required" }]}
-              >
-                <Input id="password" type="password" placeholder="Enter your Password" />
-              </Form.Item>
-
-              <Form.Item className="d-block">
-                <Button type="primary" block htmlType="submit" style={{ fontSize: "1rem", fontWeight: "600" }}>
-                  Login
-                </Button>
-              </Form.Item>
-            </Form>
-            <div>
-              <p>
-                New User? <Link to="/register">Register Here</Link>
-              </p>
-              <p>
-                Forgot Password? <Link to="/forget">Click Here</Link>
-              </p>
-            </div>
-          </section>
-        </main>
-      </header>
-    </>
+    <div>
+      <form onSubmit={handleLogin}>
+        <div>
+          <label>Username:</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Password:</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit">Login</button>
+      </form>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {success && <p style={{ color: 'green' }}>Login successful!</p>}
+    </div>
   );
-}
+};
 
-export default Login;
+export default LoginForm;
